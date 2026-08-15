@@ -1,0 +1,24 @@
+[build]
+  command = "npm install"
+  publish = "public"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/lists"
+  to = "/.netlify/functions/lists"
+  status = 200
+
+[[redirects]]
+  from = "/api/verify"
+  to = "/.netlify/functions/verify"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin/lists"
+  to = "/.netlify/functions/admin-lists"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin/codes"
+  to = "/.netlify/functions/admin-codes"
+  status = 200
