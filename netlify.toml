@@ -22,3 +22,13 @@
   from = "/api/admin/codes"
   to = "/.netlify/functions/admin-codes"
   status = 200
+
+[[redirects]]
+  from = "/wp-json/viewgrow-kontact/v1/lists"
+  to = "/.netlify/functions/lists"
+  status = 200
+
+[[redirects]]
+  from = "/wp-json/viewgrow-kontact/v1/verify"
+  to = "/.netlify/functions/verify"
+  status = 200
