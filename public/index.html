@@ -432,7 +432,7 @@ function render() {
   }
 
   else if (view.name === 'edit') {
-    const l = lists.find(x => x.id === view.listId);
+    const l = lists.find(x => String(x.id) === String(view.listId));
     if (!l) { setView('dashboard'); return; }
     m.innerHTML = `
       ${bannerHtml()}
@@ -467,7 +467,7 @@ function render() {
   }
 
   else if (view.name === 'codes') {
-    const l = lists.find(x => x.id === view.listId);
+    const l = lists.find(x => String(x.id) === String(view.listId));
     if (!l) { setView('dashboard'); return; }
     const codes = view.codes || [];
     const used = codes.filter(c => c.is_used).length;
@@ -599,4 +599,4 @@ function escapeAttr(s) { return escapeHtml(s); }
 document.getElementById('secretInput').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
 </script>
 </body>
-                                                </html>
+</html>
