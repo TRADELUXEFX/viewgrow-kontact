@@ -1,5 +1,4 @@
 const { getStore } = require("@netlify/blobs");
-const { randomUUID } = require("crypto");
 
 function blobStore() {
   return getStore({
@@ -16,6 +15,14 @@ function authed(event) {
 
 function resp(statusCode, obj) {
   return { statusCode, headers: { "Content-Type": "application/json" }, body: JSON.stringify(obj) };
+}
+
+async function nextListId(store) {
+  let counter = await store.get("lists/_counter", { type: "json" });
+  if (typeof counter !== "number") counter = 0;
+  counter += 1;
+  await store.setJSON("lists/_counter", counter);
+  return counter;
 }
 
 exports.handler = async (event) => {
@@ -35,7 +42,7 @@ exports.handler = async (event) => {
   if (event.httpMethod === "POST") {
     const body = JSON.parse(event.body || "{}");
     if (!body.name || !body.sheet_url) return resp(400, { error: "missing_fields", message: "name and sheet_url are required." });
-    const id = randomUUID();
+    const id = await nextListId(store);
     const list = { id, name: body.name, sheet_url: body.sheet_url, is_public: body.is_public !== false, created_at: new Date().toISOString() };
     await store.setJSON(`lists/${id}`, list);
     const index = (await store.get("lists/_index", { type: "json" })) || [];
@@ -59,7 +66,7 @@ exports.handler = async (event) => {
     if (!body.id) return resp(400, { error: "missing_id" });
     await store.delete(`lists/${body.id}`);
     const index = (await store.get("lists/_index", { type: "json" })) || [];
-    await store.setJSON("lists/_index", index.filter((x) => x !== body.id));
+    await store.setJSON("lists/_index", index.filter((x) => x != body.id));
     const codeIds = (await store.get(`codes/_by_list/${body.id}`, { type: "json" })) || [];
     for (const code of codeIds) await store.delete(`codes/${code}`);
     await store.delete(`codes/_by_list/${body.id}`);
