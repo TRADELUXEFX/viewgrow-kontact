@@ -1,9 +1,15 @@
-// GET /api/lists
-// Public endpoint the app calls to show available contact lists.
 const { getStore } = require("@netlify/blobs");
 
+function blobStore() {
+  return getStore({
+    name: "viewgrow-kontact",
+    siteID: process.env.BLOBS_SITE_ID,
+    token: process.env.BLOBS_TOKEN,
+  });
+}
+
 exports.handler = async () => {
-  const store = getStore("viewgrow-kontact");
+  const store = blobStore();
   const index = (await store.get("lists/_index", { type: "json" })) || [];
 
   const lists = [];
