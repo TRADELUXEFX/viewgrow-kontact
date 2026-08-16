@@ -1,8 +1,13 @@
-// GET  /api/admin/codes?list_id=<id>          -> list codes for a list
-// POST /api/admin/codes  { list_id, count }    -> generate new codes
-// Requires header:  x-admin-secret: <ADMIN_SECRET env var>
 const { getStore } = require("@netlify/blobs");
 const { randomBytes } = require("crypto");
+
+function blobStore() {
+  return getStore({
+    name: "viewgrow-kontact",
+    siteID: process.env.BLOBS_SITE_ID,
+    token: process.env.BLOBS_TOKEN,
+  });
+}
 
 function authed(event) {
   const secret = event.headers["x-admin-secret"] || event.headers["X-Admin-Secret"];
@@ -10,11 +15,7 @@ function authed(event) {
 }
 
 function resp(statusCode, obj) {
-  return {
-    statusCode,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(obj),
-  };
+  return { statusCode, headers: { "Content-Type": "application/json" }, body: JSON.stringify(obj) };
 }
 
 function generateCode() {
@@ -24,13 +25,11 @@ function generateCode() {
 
 exports.handler = async (event) => {
   if (!authed(event)) return resp(401, { error: "unauthorized" });
-
-  const store = getStore("viewgrow-kontact");
+  const store = blobStore();
 
   if (event.httpMethod === "GET") {
     const listId = event.queryStringParameters && event.queryStringParameters.list_id;
     if (!listId) return resp(400, { error: "missing_list_id" });
-
     const codeIds = (await store.get(`codes/_by_list/${listId}`, { type: "json" })) || [];
     const codes = [];
     for (const code of codeIds) {
@@ -46,32 +45,22 @@ exports.handler = async (event) => {
     const listId = body.list_id;
     const count = Math.min(parseInt(body.count, 10) || 1, 500);
     if (!listId) return resp(400, { error: "missing_list_id" });
-
     const list = await store.get(`lists/${listId}`, { type: "json" });
     if (!list) return resp(404, { error: "list_not_found" });
-
     const codeIds = (await store.get(`codes/_by_list/${listId}`, { type: "json" })) || [];
     const created = [];
     let attempts = 0;
-
     while (created.length < count && attempts < count * 5) {
       const code = generateCode();
       const exists = await store.get(`codes/${code}`, { type: "json" });
       if (!exists) {
-        const record = {
-          code,
-          list_id: listId,
-          is_used: false,
-          used_at: null,
-          created_at: new Date().toISOString(),
-        };
+        const record = { code, list_id: listId, is_used: false, used_at: null, created_at: new Date().toISOString() };
         await store.setJSON(`codes/${code}`, record);
         created.push(code);
         codeIds.push(code);
       }
       attempts++;
     }
-
     await store.setJSON(`codes/_by_list/${listId}`, codeIds);
     return resp(200, { created });
   }
